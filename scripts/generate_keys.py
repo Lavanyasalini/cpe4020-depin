@@ -1,3 +1,5 @@
+from lib.const import Address
+
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
 
@@ -6,33 +8,31 @@ wallet_key = rsa.generate_private_key(
     key_size=2048
 )
 
-with open("keys/W001.prv.pem", "wb") as f:
-    f.write(wallet_key.private_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PrivateFormat.PKCS8,
-        encryption_algorithm=serialization.NoEncryption()
-    ))
+def make_rsa(name):
+    prv = "keys/{}.prv.pem".format(name)
+    pub = "keys/{}.pub.pem".format(name)
 
-with open("keys/W001.pub.pem", "wb") as f:
-    f.write(wallet_key.public_key().public_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PublicFormat.SubjectPublicKeyInfo
-    ))
+    key = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=2048
+    )
 
-valid_key = rsa.generate_private_key(
-    public_exponent=65537,
-    key_size=2048
-)
+    with open(prv, "wb") as f:
+        f.write(key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption()
+        ))
 
-with open("keys/validator.prv.pem", "wb") as f:
-    f.write(valid_key.private_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PrivateFormat.PKCS8,
-        encryption_algorithm=serialization.NoEncryption()
-    ))
+    with open(pub, "wb") as f:
+        f.write(key.public_key().public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo
+        ))
 
-with open("keys/validator.pub.pem", "wb") as f:
-    f.write(valid_key.public_key().public_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PublicFormat.SubjectPublicKeyInfo
-    ))
+# validator keys
+make_rsa("validator")
+
+# wallet keys
+for w in Address.WALLETS:
+    make_rsa(w)
