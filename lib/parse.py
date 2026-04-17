@@ -3,6 +3,7 @@ from lib.error import BadMessageException
 
 import json
 import struct
+import socket
 from enum import Enum
 
 def next_sep(raw, separator=b"."):
@@ -12,13 +13,17 @@ def next_sep(raw, separator=b"."):
         return len(raw)
 
 class Message:
-    def __init__(self, socket):
+    def __init__(self, s):
         try:
-            (self.raw, self.address) = socket.recvfrom(1024)
+            if s.type == socket.SOCK_STREAM:
+                self.raw = s.recv(1024)
+                self.address = s.getpeername()
+            else:
+                (self.raw, self.address) = s.recvfrom(1024)
         except ValueError:
-            raise BadMessageException(socket)
+            raise BadMessageException(s)
 
-        self.socket = socket
+        self.socket = s
         self.body = self.raw
         self.type = self.get_field(Type)
 
