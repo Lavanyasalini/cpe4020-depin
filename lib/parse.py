@@ -15,15 +15,15 @@ def next_sep(raw, separator=b"."):
 class Message:
     def __init__(self, s):
         try:
-            if s.type == socket.SOCK_STREAM:
-                try:
+            try:
+                if s.type == socket.SOCK_STREAM:
                     self.raw = s.recv(1024)
                     self.address = s.getpeername()
-                except TimeoutError:
-                    return BadMessageException(s, None, "No message.")
-                    pass
-            else:
-                (self.raw, self.address) = s.recvfrom(1024)
+                else:
+                    (self.raw, self.address) = s.recvfrom(1024)
+            except TimeoutError:
+                return BadMessageException(s, None, "No message.")
+                pass
         except ValueError:
             raise BadMessageException(s)
 
