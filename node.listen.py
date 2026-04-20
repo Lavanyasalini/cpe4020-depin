@@ -1,5 +1,5 @@
 from lib.keys import Public, Private, Symmetric
-from lib.const import Type, Address
+from lib.const import Time, Type, Address
 from lib.bytes import concat
 from lib.parse import Message
 from lib.error import AppException, BadMessageException
@@ -9,6 +9,7 @@ import socket
 import select
 
 import sys
+import time
 
 # NODE INFO
 NODE_ID = sys.argv[1]
@@ -38,9 +39,9 @@ def handle_request(s):
 
     # start dedicated channel
     tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    tcp.settimeout(Time.TIMEOUT)
     tcp.bind((NODE_ADDR[0], 0))
     tcp.connect(address)
-    tcp.settimeout(0)
 
     channels[tcp] = {
         "session": (node_id, r),
@@ -60,8 +61,7 @@ def handle_request(s):
 def send_all(msg):
     for v in Address.VALIDATORS:
         try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM):
-                tcp_v = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as tcp_v:
                 tcp_v.connect(Address.VALIDATORS[v])
                 tcp_v.send(msg)
         except ConnectionRefusedError:
@@ -97,7 +97,10 @@ def handle_channel(tcp):
         # check for consensus
 
 def handle_decision(tcp):
-        (v_tcp, _) = tcp.accept()
+        try:
+            (v_tcp, _) = tcp.accept()
+        except TimeoutError:
+            raise BadMessageException(tcp, None, "No message")
 
         with v_tcp:
             m = (
@@ -122,13 +125,13 @@ def poll():
     try:
         tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         tcp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        tcp.settimeout(0)
+        tcp.settimeout(Time.TIMEOUT)
         tcp.bind(NODE_ADDR)
         tcp.listen()
 
         udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         udp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        udp.settimeout(0)
+        udp.settimeout(Time.TIMEOUT)
         udp.bind(Address.BROADCAST)
 
         sockets.append(tcp)
@@ -136,7 +139,7 @@ def poll():
 
         while True:
             try:
-                (read_ready, _, _) = select.select(sockets, [], [])
+                (read_ready, _, _) = select.select(sockets, [], [], 0)
 
                 for s in read_ready:
                     if s == udp:
@@ -149,6 +152,7 @@ def poll():
                     else:
                         handle_decision(s)
 
+                time.sleep(Time.POLL)
             except AppException as e:
                 print(e)
     finally:

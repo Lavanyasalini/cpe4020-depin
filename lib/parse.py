@@ -16,8 +16,12 @@ class Message:
     def __init__(self, s):
         try:
             if s.type == socket.SOCK_STREAM:
-                self.raw = s.recv(1024)
-                self.address = s.getpeername()
+                try:
+                    self.raw = s.recv(1024)
+                    self.address = s.getpeername()
+                except TimeoutError:
+                    return BadMessageException(s, None, "No message.")
+                    pass
             else:
                 (self.raw, self.address) = s.recvfrom(1024)
         except ValueError:

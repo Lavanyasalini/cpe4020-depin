@@ -1,15 +1,18 @@
 from lib.keys import Public, Private
-from lib.const import Type, Address
+from lib.const import Time, Type, Address
 from lib.bytes import concat
 from lib.parse import Message
 from lib.error import AppException
 
 import json
+import time
 import socket
 import select
 from secrets import randbits
 
 import sys
+
+TIMEOUT = 15.00
 
 # NODE INFO
 NODE_ID = sys.argv[1]
@@ -40,6 +43,7 @@ def send(data):
     pending[tcp] = {
         "session": r,
         "data": json.dumps(data).encode(),
+        "start": time.time(),
         "ack": 0
     }
 
@@ -70,7 +74,7 @@ def handle_channel(tcp):
 
             # check nonce
             if r != ch["session"]:
-                raise m.error("Wrong channel.")
+                raise m.error("Bad session.")
 
             # send TKN
             ack = concat(
@@ -80,24 +84,39 @@ def handle_channel(tcp):
 
             tcp_connect.send(ack)
 
-    # close port when all responses have been received
-    if ch["ack"] >= len(Address.VALIDATORS):
-        pending.pop(tcp)
-        tcp.close()
-
 def fulfill():
+    global pending
+
     try:
         while len(pending) > 0:
-            (read_ready, _, _) = select.select(pending.keys(), [], [])
+            (ready, _, _) = select.select(pending.keys(), [], [], 0)
 
-            for tcp in read_ready:
+            for tcp in ready:
                 handle_channel(tcp)
+
+            now = time.time()
+
+            for tcp in list(pending.keys()):
+                ch = pending[tcp]
+
+                if (now - ch["start"]) > Time.TIMEOUT:
+                    tcp.close()
+                    pending.pop(tcp)
+
+                    print(
+                        "Message #{} timeout! Found {} validators.".format(
+                            ch["session"], ch["ack"]
+                        )
+                    )
+
+                time.sleep(Time.POLL)
+
     except AppException as e:
         print(e)
 
 def close():
-    for s in pending:
-        s.close()
+    for tcp in pending:
+        tcp.close()
 
 if __name__ == "__main__":
     try:

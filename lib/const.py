@@ -1,5 +1,9 @@
 from enum import Enum
 
+class Time:
+    TIMEOUT = 15.00
+    POLL = 0.10
+
 class Type(Enum):
     REQ = 1
     ACK = 3
@@ -14,7 +18,7 @@ class Type(Enum):
 
 
 class Address:
-    BROADCAST = ("11.31.7.255", 6561)
+    BROADCAST = ("10.100.191.255", 6561)
 
     VALIDATORS = {
         "V01": ("127.0.0.1", 6562),
