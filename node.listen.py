@@ -26,7 +26,7 @@ def handle_request(s):
     # parse REQ (258 bytes)
     m = (
         Message(s)
-            .parse_type(Type.REQ)
+            .as_type(Type.REQ)
             .apply(keys["self"].decrypt)
     )
 
@@ -70,7 +70,7 @@ def handle_channel(tcp):
         # parse TKN
         m = (
             Message(tcp)
-                .parse_type(Type.TKN)
+                .as_type(Type.TKN)
                 .apply(keys[ch["session"][0]].unsign)
                 .apply(keys["self"].decrypt)
         )
@@ -101,7 +101,7 @@ def handle_decision(tcp):
         with v_tcp:
             m = (
                 Message(v_tcp)
-                    .parse_type(Type.VAL, Type.DON)
+                    .as_type(Type.VAL, Type.DON)
                     .apply(keys["decision"].decrypt)
             )
 

@@ -63,26 +63,25 @@ def handle_channel(tcp):
     (tcp_connect, _) = tcp.accept()
 
     with tcp_connect:
-        m = Message(tcp_connect)
+        m = Message(tcp_connect).as_type(Type.ACK) 
         
-        if m.type == Type.ACK:
-            ch["ack"] += 1
+        ch["ack"] += 1
 
-            # parse ACK
-            m.apply(keys["self"].decrypt)
-            (validator_id, r) = m.get_fields(str, int)
+        # parse ACK
+        m.apply(keys["self"].decrypt)
+        (validator_id, r) = m.get_fields(str, int)
 
-            # check nonce
-            if r != ch["session"]:
-                raise m.error("Bad session.")
+        # check nonce
+        if r != ch["session"]:
+            raise m.error("Bad session.")
 
-            # send TKN
-            ack = concat(
-                Type.TKN,
-                keys["self"].sign(keys["validator"].encrypt(ch["data"]))
-            )
+        # send TKN
+        ack = concat(
+            Type.TKN,
+            keys["self"].sign(keys["validator"].encrypt(ch["data"]))
+        )
 
-            tcp_connect.send(ack)
+        tcp_connect.send(ack)
 
 def fulfill():
     global pending
