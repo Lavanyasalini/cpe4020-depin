@@ -1,3 +1,4 @@
+import ipaddress
 from enum import Enum
 
 class Time:
@@ -18,15 +19,18 @@ class Type(Enum):
 
 
 class Address:
-    BROADCAST = ("10.100.191.255", 6561)
+    LOCAL = "10.100.153.11"
 
     VALIDATORS = {
-        "V01": ("127.0.0.1", 6562),
-        "V02": ("127.0.0.1", 6563),
-        "V03": ("127.0.0.1", 6564),
+        "V01": (LOCAL, 6562),
+        "V02": (LOCAL, 6563),
+        "V03": (LOCAL, 6564),
     }
 
     WALLETS = {
-        "W01": ("127.0.0.1", 0),
-        "W02": ("127.0.0.1", 0),
+        "W01": (LOCAL, 0),
+        "W02": (LOCAL, 0),
     }
+
+    NETWORK = ipaddress.ip_network(VALIDATORS["V01"][0])
+    BROADCAST = (str(NETWORK.broadcast_address), 6561)

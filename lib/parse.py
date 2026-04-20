@@ -55,12 +55,6 @@ class Message:
                 return typ(struct.unpack(">B", raw)[0])
             elif typ == int:
                 return struct.unpack(">I", raw)[0]
-            elif typ == Address:
-                parts = struct.unpack(">BBBBI", raw)
-                address = ".".join(str(b) for b in parts[:4])
-                port = parts[4]
-
-                return (address, port)
         except (ValueError, struct.error):
             raise self.error("Malformed message body.")
 

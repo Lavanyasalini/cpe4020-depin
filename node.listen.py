@@ -11,10 +11,6 @@ import select
 import sys
 import time
 
-# NODE INFO
-NODE_ID = sys.argv[1]
-NODE_ADDR = Address.VALIDATORS[NODE_ID]
-
 # KEYS
 keys = {}
 keys["self"] = Private("keys/validator.prv.pem")
@@ -35,7 +31,8 @@ def handle_request(s):
             .apply(keys["self"].decrypt)
     )
 
-    (node_id, r, address) = m.get_fields(str, int, Address)
+    (node_id, r, port) = m.get_fields(str, int, int)
+    address = (m.address[0], port)
 
     # start dedicated channel
     tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -160,4 +157,8 @@ def poll():
             s.close()
 
 if __name__ == "__main__":
+    # NODE INFO
+    NODE_ID = sys.argv[1]
+    NODE_ADDR = Address.VALIDATORS[NODE_ID]
+
     poll()

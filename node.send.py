@@ -39,7 +39,6 @@ def send(data):
     while r in pending:
         r = randbits(32)
 
-    address = tcp.getsockname()
     pending[tcp] = {
         "session": r,
         "data": json.dumps(data).encode(),
@@ -51,9 +50,11 @@ def send(data):
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as udp:
         udp.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 
+        address = tcp.getsockname()
+
         req = concat(
             Type.REQ,
-            keys["validator"].encrypt(NODE_ID, r, tcp.getsockname())
+            keys["validator"].encrypt(NODE_ID, r, address[1])
         )
 
         udp.sendto(req, Address.BROADCAST)
