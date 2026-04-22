@@ -13,13 +13,9 @@ import sys
 
 TIMEOUT = 15.00
 
-# NODE INFO
-NODE_ID = sys.argv[1]
-NODE_ADDR = Address.WALLETS[NODE_ID]
-
 # KEYS
 keys = {}
-keys["self"] = Private("keys/{}.prv.pem".format(NODE_ID))
+keys["self"] = None
 keys["validator"] = Public("keys/validator.pub.pem")
 
 # CONNECTIONS
@@ -124,6 +120,12 @@ def close():
         tcp.close()
 
 if __name__ == "__main__":
+    # NODE INFO
+    NODE_ID = sys.argv[1]
+    NODE_ADDR = Address.WALLETS[NODE_ID]
+
+    keys["self"] = Private("keys/{}.prv.pem".format(NODE_ID))
+
     try:
         while True:
             data = input("> ")
