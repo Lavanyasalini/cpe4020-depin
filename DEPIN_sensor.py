@@ -88,25 +88,17 @@ def init_mpu_or_exit():
         print(f"Failed to initialize MPU6050: {e}")
         sys.exit(1)
 
-# Compute planar angle from ax, ay in degrees (0..360)
 def accel_to_angle(ax, ay):
     ang = math.degrees(math.atan2(ay, ax)) % 360
     return ang
-
-# Minimal angular difference (handles wrap-around)
 def angular_diff(a, b):
     return abs((a - b + 180) % 360 - 180)
 
-# Read current angle from sensor
 def get_current_angle(mpu):
     ax, ay, az = mpu.acceleration
     return accel_to_angle(ax, ay)
-
-# Initialize components
 mpu = init_mpu_or_exit()
 wallet = PiWallet()
-
-# warm up samples to set initial prev_angle
 SAMPLES_INIT = 8
 angles = []
 for _ in range(SAMPLES_INIT):
