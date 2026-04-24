@@ -25,35 +25,58 @@ ROTATION_THRESHOLD_MAX = 180                     # degrees
 TEST_MODE = False                                # Set True to test without sensor
 
 # pi wallet
+import os
+from pathlib import Path
+from cryptography.hazmat.primitives import serialization, hashes
+from cryptography.hazmat.primitives.asymmetric import rsa, padding
+
+WALLET_PATH = Path("wallet.pem")
+
 class PiWallet:
-    def __init__(self):
-        # Generate or load RSA key pair
-        self.private_key = rsa.generate_private_key(
-            public_exponent=65537, key_size=2048
-        )
+    def __init__(self, path: Path = WALLET_PATH):
+        self.path = path
+        if self.path.exists():
+            # Load existing private key
+            with open(self.path, "rb") as f:
+                self.private_key = serialization.load_pem_private_key(f.read(), password=None)
+            print("Loaded existing Pi wallet key.")
+        else:
+            # Generate new key and save to disk with restrictive permissions
+            self.private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+            pem = self.private_key.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.PKCS8,
+                encryption_algorithm=serialization.NoEncryption()
+            )
+            with open(self.path, "wb") as f:
+                f.write(pem)
+            try:
+                os.chmod(self.path, 0o600)
+            except Exception:
+                pass
+            print(f"Created new Pi wallet and saved key to {self.path}")
+
         self.public_key = self.private_key.public_key()
-        
-        # Wallet address 
+        # Proper SHA256 digest of public key bytes to derive address
         pub_bytes = self.public_key.public_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo
         )
-        self.address = hashes.Hash(hashes.SHA256()).update(pub_bytes).finalize().hex()[:16]
-        
-        print(f"Pi Wallet created! Address: {self.address}")
+        h = hashes.Hash(hashes.SHA256())
+        h.update(pub_bytes)
+        self.address = h.finalize().hex()[:16]
+        print(f"Pi Wallet Address: {self.address}")
 
     def sign_message(self, message_dict):
         """Sign the JSON payload with private key"""
         message_bytes = json.dumps(message_dict, sort_keys=True).encode('utf-8')
         signature = self.private_key.sign(
             message_bytes,
-            padding.PSS(
-                mgf=padding.MGF1(hashes.SHA256()),
-                salt_length=padding.PSS.MAX_LENGTH
-            ),
+            padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
             hashes.SHA256()
         )
         return signature
+
 
 # MPU6050 sensor setup
 if not TEST_MODE:
