@@ -17,7 +17,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa, padding
 
 
 
-VALIDATOR_URL = "placeholder"   # Change to your group's validator IP/port
+VALIDATOR_URL = "placeholder"   
 COINS_PER_EVENT = 10
 MIN_EVENT_GAP = 3.0                              # seconds
 ROTATION_THRESHOLD_MIN = 30                      # degrees
