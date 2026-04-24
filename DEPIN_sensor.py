@@ -74,7 +74,7 @@ def get_rotation_angle():
         return (prev_angle + 45) % 360  # simulate turning lock
     
     ax, ay, az = mpu.acceleration
-    # for door lock tilt/rotation)
+    # for door lock tilt
     magnitude = (ax**2 + ay**2 + az**2)**0.5
     angle = abs(ax) * 90 + abs(ay) * 90  # rough mapping for rotation detection
     return angle % 360
