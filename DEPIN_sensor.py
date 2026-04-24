@@ -12,6 +12,8 @@ import board
 import busio
 import adafruit_mpu6050
 import math
+import os
+from pathlib import Path
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 
@@ -23,14 +25,8 @@ MIN_EVENT_GAP = 3.0                              # seconds
 ROTATION_THRESHOLD_MIN = 30                      # degrees
 ROTATION_THRESHOLD_MAX = 180                     # degrees
 TEST_MODE = False                                # Set True to test without sensor
-
-# pi wallet
-import os
-from pathlib import Path
-from cryptography.hazmat.primitives import serialization, hashes
-from cryptography.hazmat.primitives.asymmetric import rsa, padding
-
 WALLET_PATH = Path("wallet.pem")
+# pi wallet
 
 class PiWallet:
     def __init__(self, path: Path = WALLET_PATH):
@@ -41,7 +37,6 @@ class PiWallet:
                 self.private_key = serialization.load_pem_private_key(f.read(), password=None)
             print("Loaded existing Pi wallet key.")
         else:
-            # Generate new key and save to disk with restrictive permissions
             self.private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
             pem = self.private_key.private_bytes(
                 encoding=serialization.Encoding.PEM,
@@ -57,7 +52,6 @@ class PiWallet:
             print(f"Created new Pi wallet and saved key to {self.path}")
 
         self.public_key = self.private_key.public_key()
-        # Proper SHA256 digest of public key bytes to derive address
         pub_bytes = self.public_key.public_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo
