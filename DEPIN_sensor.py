@@ -53,7 +53,7 @@ class PiWallet:
         )
         h = hashes.Hash(hashes.SHA256())
         h.update(pub_bytes)
-        self.address = h.finalize().hex()[:16]
+        self.address = h.finalize().hex()  # full 32 bytes = 64 hex chars
         self.pub_pem = pub_bytes.decode('utf-8')
         print(f"Pi Wallet Address: {self.address}")
 
