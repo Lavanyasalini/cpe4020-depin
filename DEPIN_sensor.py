@@ -8,7 +8,7 @@ import sys
 
 from send import request_validator
 
-# Pi 5 uses smbus2 directly instead of board/busio
+# Pi 5 uses smbus2 directly instead of board like vro really...
 import smbus2
 import adafruit_mpu6050
 import busio
