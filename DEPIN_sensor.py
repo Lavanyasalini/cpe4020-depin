@@ -9,7 +9,7 @@ import sys
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 
-# Pi 5 uses smbus2 directly instead of board/busio
+# Pi 5 uses smbus2 directly instead of board like vro really...
 import smbus2
 import adafruit_mpu6050
 import busio
