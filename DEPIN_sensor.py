@@ -1,4 +1,3 @@
-#mamabeanie
 import time
 import json
 import requests
@@ -7,11 +6,14 @@ from pathlib import Path
 from datetime import datetime
 import math
 import sys
-import board
-import busio
-import adafruit_mpu6050
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
+
+# Pi 5 uses smbus2 directly instead of board/busio
+import smbus2
+import adafruit_mpu6050
+import busio
+import board
 
 # Config
 VALIDATOR_URL = "placeholder"  # set real URL
@@ -22,6 +24,10 @@ ROTATION_THRESHOLD_MAX = 180
 WALLET_PATH = Path("wallet.pem")
 I2C_RETRY_DELAY = 2.0
 REQUEST_TIMEOUT = 5.0
+
+# Pi 5 I2C bus number
+I2C_BUS = 1
+MPU6050_ADDR = 0x68
 
 # Wallet with persistent RSA key
 class PiWallet:
@@ -53,7 +59,7 @@ class PiWallet:
         )
         h = hashes.Hash(hashes.SHA256())
         h.update(pub_bytes)
-        self.address = h.finalize().hex()  # full 32 bytes = 64 hex chars
+        self.address = h.finalize().hex()
         self.pub_pem = pub_bytes.decode('utf-8')
         print(f"Pi Wallet Address: {self.address}")
 
@@ -66,36 +72,52 @@ class PiWallet:
         )
         return signature
 
-# Initialize MPU6050
+# Initialize MPU6050 with Pi 5 compatible I2C
 def init_mpu_or_exit():
     try:
+        # Pi 5 needs explicit I2C bus initialization
         i2c = busio.I2C(board.SCL, board.SDA)
-        
-        t0 = time.time()
-        while not i2c.try_lock() and (time.time() - t0) < 1.0:
+
+        # Wait for I2C bus to be ready
+        timeout = time.time() + 5.0
+        while not i2c.try_lock():
+            if time.time() > timeout:
+                raise RuntimeError("I2C bus lock timeout")
             time.sleep(0.01)
-        try:
-            i2c.unlock()
-        except Exception:
-            pass
+        i2c.unlock()
+
         mpu = adafruit_mpu6050.MPU6050(i2c)
+
+        # Pi 5 fix: small delay after init for sensor to stabilize
+        time.sleep(0.5)
+
         print("MPU6050 initialized.")
         return mpu
     except Exception as e:
         print(f"Failed to initialize MPU6050: {e}")
+        print("Tips:")
+        print("  1. Check I2C is enabled: sudo raspi-config -> Interface Options -> I2C")
+        print("  2. Check wiring: SDA->Pin3, SCL->Pin5, VCC->Pin1, GND->Pin6")
+        print("  3. Check sensor detected: i2cdetect -y 1 (should show 68)")
         sys.exit(1)
 
 def accel_to_angle(ax, ay):
     ang = math.degrees(math.atan2(ay, ax)) % 360
     return ang
+
 def angular_diff(a, b):
     return abs((a - b + 180) % 360 - 180)
 
 def get_current_angle(mpu):
     ax, ay, az = mpu.acceleration
     return accel_to_angle(ax, ay)
+
+# Main
+print("Starting mamabeanie on Raspberry Pi 5...")
 mpu = init_mpu_or_exit()
 wallet = PiWallet()
+
+# Average initial angle over 8 samples
 SAMPLES_INIT = 8
 angles = []
 for _ in range(SAMPLES_INIT):
@@ -105,7 +127,6 @@ prev_angle = sum(angles) / len(angles)
 print(f"Initial angle set to {prev_angle:.1f}°")
 
 last_event_time = 0.0
-
 print("Waiting for lock rotation...")
 
 while True:
@@ -113,8 +134,10 @@ while True:
         current_angle = get_current_angle(mpu)
     except Exception as e:
         print(f"Sensor read error: {e}")
-       
-        sys.exit(1)
+        # Pi 5 fix: retry instead of hard exit on read error
+        print("Retrying in 2 seconds...")
+        time.sleep(I2C_RETRY_DELAY)
+        continue
 
     diff = angular_diff(current_angle, prev_angle)
     now = time.time()
