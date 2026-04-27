@@ -256,17 +256,20 @@ def handle_validator(tcp):
         tkn.apply(keys[wallet_id].unsign)
         data = tkn.as_json()
 
+        # default accept mint
         decision = Type.TKN
 
+        # check for invalid data
         if (("node_id" not in data)
             or ("event" not in data)
             or ("timestamp" not in data)):
             print("Reject! Missing required field.")
             decision = Type.BAD
         else:
-            # TODO: check timestamp
-            if ((data["timestamp"] > now)
-                or (data["timestamp"] - now > timedelta(seconds=30))):
+            delta = data["timestamp"] - now
+
+            if ((delta < timedelta(seconds=0))
+                or (delta > timedelta(seconds=30))):
                 print("Reject! Bad timestamp.")
             elif data["event"] == "lock_rotation":
                 if (("angle_change_deg" not in data)
@@ -284,7 +287,7 @@ def handle_validator(tcp):
                         print("Reject! Angles do not add up.")
                         decision = Type.BAD
             else:
-                # invalid sensor event
+                print("Reject! Invalid sensor event.")
                 decision = Type.BAD
 
         # update session
