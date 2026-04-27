@@ -18,7 +18,7 @@ class Type(Enum):
         return "'" + self.name + "'"
 
 class Address:
-    HOST = ipaddress.ip_interface("11.23.7.134/21")
+    HOST = ipaddress.ip_interface("11.24.7.23/21")
     HOST_IP = str(HOST.ip)
     HOST_NETWORK = str(HOST.network)
     HOST_BROADCAST = str(HOST.network.broadcast_address)
@@ -27,6 +27,11 @@ class Address:
         "V01": (HOST_IP, 6562),
         "V02": (HOST_IP, 6563),
         "V03": (HOST_IP, 6564),
+#        "V04": (HOST_IP, 6565),
+#        "V05": (HOST_IP, 6566),
+#        "V06": (HOST_IP, 6567),
+#        "V07": (HOST_IP, 6568),
+#        "V08": (HOST_IP, 6569),
     }
 
     WALLETS = {

@@ -6,17 +6,31 @@ from cryptography.fernet import Fernet
 
 from lib.bytes import concat
 
+# hash a list of byte-like objects with SHA256
+def hash(*parts):
+    message = concat(*parts)
+
+    digest = hashes.Hash(hashes.SHA256())
+    digest.update(message)
+
+    return digest.finalize().hex()
+
 class Public:
+    # load and manage the public key of an RSA key pair
     def __init__(self, filename):
         with open(filename, "rb") as f:
             self.key = load_pem_public_key(f.read())
 
+    # convert the public key to a user-facing format
     def reveal(self):
-        return self.key.public_bytes(
-            encoding=Encoding.PEM,
-            format=PublicFormat.SubjectPublicKeyInfo
+        return hash(
+            self.key.public_bytes(
+                encoding=Encoding.PEM,
+                format=PublicFormat.SubjectPublicKeyInfo
+            )
         )
 
+    # encrypt a list of byte-like objects with the key
     def encrypt(self, *parts):
         return self.key.encrypt(
             concat(*parts),
@@ -27,6 +41,7 @@ class Public:
             )
         )
 
+    # verify and consume a signature for a message in the form M . K-(H(M))
     def unsign(self, message):
         signature = message[-256:]
         message = message[:-257]
@@ -43,6 +58,7 @@ class Public:
         return message
 
 class Private:
+    # load and manage the private key of an RSA key pair
     def __init__(self, filename):
         with open(filename, "rb") as f:
             self.key = load_pem_private_key(
@@ -50,6 +66,7 @@ class Private:
                 password=None
             )
 
+    # encrypt and hash a list of byte-like objects and append to the message
     def sign(self, *parts):
         message = concat(*parts)
         
@@ -64,6 +81,7 @@ class Private:
             )
         )
 
+    # decrypt a byte string with the key
     def decrypt(self, ciphertext):
         return self.key.decrypt(
             ciphertext,
@@ -75,14 +93,18 @@ class Private:
         )
 
 class Symmetric:
+    # load and manage a symmetric key with the Fernet module
     def __init__(self, filename):
         with open(filename, "rb") as f:
             self.key = f.read()
 
         self.cipher = Fernet(self.key)
 
+    # encrypt a list of byte-like objects with the key
     def encrypt(self, *parts):
         return self.cipher.encrypt(concat(*parts))
 
+    # decrypt a byte string with the key
     def decrypt(self, ciphertext):
         return self.cipher.decrypt(ciphertext)
+

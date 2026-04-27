@@ -13,23 +13,45 @@ def next_sep(raw, separator=b"."):
         return len(raw)
 
 class Message:
-    def __init__(self, s):
+    def __init__(self):
+        self.type = Type.BAD
+        self.raw = b""
+
+        self.socket = None
+        self.address = None
+        self.port = None
+
+    def from_socket(s):
+        m = Message()
+        m.socket = s
+
+        # receive message
         try:
-            try:
-                if s.type == socket.SOCK_STREAM:
-                    self.raw = s.recv(1024)
-                    self.address = s.getpeername()
-                else:
-                    (self.raw, self.address) = s.recvfrom(1024)
-            except TimeoutError:
-                return BadMessageException(s, None, "No message.")
-                pass
+            if s.type == socket.SOCK_STREAM:
+                m.raw = s.recv(1024)
+                (m.address, m.port) = s.getpeername()
+            else:
+                (m.raw, (m.address, m.port)) = s.recvfrom(1024)
         except ValueError:
             raise BadMessageException(s)
+        except TimeoutError:
+            raise m.error("No message.")
 
-        self.socket = s
-        self.body = self.raw
-        self.type = self.get_field(Type)
+        # parse message type
+        m.body = m.raw
+        m.type = m.get_field(Type)
+
+        return m
+
+    def from_bytes(raw):
+        m = Message()
+        m.raw = raw
+
+        # parse message type
+        m.body = raw
+        m.type = m.get_field(Type)
+
+        return m
 
     def as_json(self):
         return json.loads(self.body.decode())
@@ -70,4 +92,13 @@ class Message:
         return tuple(self.get_field(typ) for typ in types)
 
     def error(self, message):
-        return BadMessageException(self.socket, self.address, message)
+        if self.address:
+            return BadMessageException(
+                self.socket,
+                (self.address, self.port),
+                message
+            )
+        else:
+            return BadMessageException(
+                self.socket, None, message
+            )
