@@ -220,6 +220,9 @@ def handle_request(udp):
 
 # handle message from validator
 def handle_validator(tcp):
+    # record time at start of transaction
+    now = datetime.now()
+
     # establish connection
     (tcp_val, _) = tcp.accept()
 
@@ -255,9 +258,34 @@ def handle_validator(tcp):
 
         decision = Type.TKN
 
-        if (data < 0) or (data > 360):
-            # invalid angle
+        if (("node_id" not in data)
+            or ("event" not in data)
+            or ("timestamp" not in data)):
+            print("Reject! Missing required field.")
             decision = Type.BAD
+        else:
+            # TODO: check timestamp
+            if ((data["timestamp"] > now)
+                or (data["timestamp"] - now > timedelta(seconds=30))):
+                print("Reject! Bad timestamp.")
+            elif data["event"] == "lock_rotation":
+                if (("angle_change_deg" not in data)
+                    or ("prev_angle_deg" not in data)
+                    or ("angle_deg" not in data)):
+                    print("Reject! Missing event-specific field.")
+                    decision = Type.BAD
+                elif ((data["angle_deg"] < 0)
+                      or (data["angle_deg"] > 360)):
+                    print("Reject! Bad angle.")
+                    decision = Type.BAD
+                else:
+                    expected = data["prev_angle_deg"] + data["angle_change_deg"]
+                    if data["angle_deg"] != expected:
+                        print("Reject! Angles do not add up.")
+                        decision = Type.BAD
+            else:
+                # invalid sensor event
+                decision = Type.BAD
 
         # update session
         session.add_decision(NODE_ID, decision)
