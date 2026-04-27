@@ -37,6 +37,7 @@ I2C_BUS = 1
 MPU6050_ADDR = 0x68  # default address for the sensor, look it up
 
 # WALLET KEY
+from lib.keys import Private
 key = Private("keys/{}.prv.pem".format(NODE_ID))
 
 # SENSOR SETUP
