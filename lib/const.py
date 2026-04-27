@@ -18,25 +18,36 @@ class Type(Enum):
         return "'" + self.name + "'"
 
 class Address:
-    HOST = ipaddress.ip_interface("10.167.29.119/24")
-    HOST_IP = str(HOST.ip)
-    HOST_NETWORK = str(HOST.network)
-    HOST_BROADCAST = str(HOST.network.broadcast_address)
+    # address of pi miner
+    PI_HOST = ipaddress.ip_interface("10.167.29.119/24")
+    PI_IP = str(PI_HOST.ip)
+
+    # address of other wallet
+    OTHER_HOST = ipaddress.ip_interface("10.167.29.119/24")
+    OTHER_IP = str(OTHER_HOST.ip)
+
+    # shared address of validators
+    VALIDATOR_HOST = ipaddress.ip_interface("10.167.29.119/24")
+    VALIDATOR_IP = str(VALIDATOR_HOST.ip)
+
+    # derived network information
+    NETWORK_IP = str(PI_HOST.network)
+    BROADCAST_IP = str(PI_HOST.network.broadcast_address)
 
     VALIDATORS = {
-        "V01": (HOST_IP, 6562),
-        "V02": (HOST_IP, 6563),
-        "V03": (HOST_IP, 6564),
-#        "V04": (HOST_IP, 6565),
-#        "V05": (HOST_IP, 6566),
-#        "V06": (HOST_IP, 6567),
-#        "V07": (HOST_IP, 6568),
-#        "V08": (HOST_IP, 6569),
+        "V01": (VALIDATOR_IP, 6562),
+        "V02": (VALIDATOR_IP, 6563),
+        "V03": (VALIDATOR_IP, 6564),
+#        "V04": (VALIDATOR_IP, 6565),
+#        "V05": (VALIDATOR_IP, 6566),
+#        "V06": (VALIDATOR_IP, 6567),
+#        "V07": (VALIDATOR_IP, 6568),
+#        "V08": (VALIDATOR_IP, 6569),
     }
 
     WALLETS = {
-        "W01": (HOST_IP, 0),
-        "W02": (HOST_IP, 0),
+        "W01": (PI_IP, 0),
+        "W02": (OTHER_IP, 0),
     }
 
-    BROADCAST = (HOST_BROADCAST, 6561)
+    BROADCAST = (BROADCAST_IP, 6561)
