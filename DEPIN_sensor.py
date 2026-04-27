@@ -15,10 +15,10 @@ import adafruit_mpu6050
 import busio
 import board
 
-# --- CONFIG STUFF ---
+# CONFIG STUFF goober
 # change the URL or literally nothing works lol
 VALIDATOR_URL = "placeholder"  # set real URL
-# how many coins we get per shake/rotation event, free money basically
+# how many coins we get per rotation event, free money basically
 COINS_PER_EVENT = 10
 # cooldown between events so we can't just spam it and get infinite coins
 MIN_EVENT_GAP = 3.0                # seconds
@@ -37,7 +37,7 @@ REQUEST_TIMEOUT = 5.0
 I2C_BUS = 1
 MPU6050_ADDR = 0x68  # default address for the sensor, look it up
 
-# --- WALLET CLASS ---
+# WALLET CLASS
 # this handles our crypto keys so we can prove its actually us sending the coin requests
 # basically if you delete wallet.pem you lose your identity, don't do that
 class PiWallet:
@@ -91,7 +91,7 @@ class PiWallet:
         )
         return signature
 
-# --- SENSOR SETUP ---
+# SENSOR SETUP i wonder what else to title it Sean tap in
 # try to connect to the gyroscope/accelerometer and die loudly if we can't
 # no point running the program without the sensor lmao
 def init_mpu_or_exit():
@@ -115,7 +115,7 @@ def init_mpu_or_exit():
         print("MPU6050 initialized.")
         return mpu
     except Exception as e:
-        # something went wrong, print helpful stuff and just exit
+        # something went wrong, print helpful stuff and just exit, need anymore assistance look youtube video with a indian guy
         print(f"Failed to initialize MPU6050: {e}")
         print("Tips:")
         print("  1. Check I2C is enabled: sudo raspi-config -> Interface Options -> I2C")
@@ -123,7 +123,7 @@ def init_mpu_or_exit():
         print("  3. Check sensor detected: i2cdetect -y 1 (should show 68)")
         sys.exit(1)
 
-# --- MATH HELPERS ---
+# MATH STUFF
 # convert raw accelerometer x/y into an angle in degrees (0-360)
 # basically asking "which way is gravity pulling" = which way is it tilted
 def accel_to_angle(ax, ay):
@@ -140,7 +140,7 @@ def get_current_angle(mpu):
     ax, ay, az = mpu.acceleration
     return accel_to_angle(ax, ay)
 
-# --- MAIN LOOP ---
+# MAIN LOOP
 print("Starting mamabeanie on Raspberry Pi 5...")
 
 # boot up the sensor, exits the whole program if it fails
@@ -181,7 +181,7 @@ while True:
         print(f"Lock rotation detected! Change: {diff:.1f}° (prev {prev_angle:.1f} -> now {current_angle:.1f})")
 
         # build the payload we're gonna send to the validator
-        # includes all the juicy data about what happened + who we are
+        # includes all the juicy data about what happened and who we are
         payload = {
             "type": "mint",
             "from": "sensor_node",
@@ -236,3 +236,4 @@ while True:
     prev_angle = current_angle
     # poll 10 times per second, don't need faster than that
     time.sleep(0.1)
+    # save da world, my final message goodbye
